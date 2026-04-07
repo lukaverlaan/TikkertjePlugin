@@ -18,16 +18,12 @@ public class TikkertjeScoreboard {
         this.gameManager = gameManager;
     }
 
-    public void updateAll(int timeLeft) {
+    public void updateAll(int timeLeft, int round) {
         for (Player player : Bukkit.getOnlinePlayers()) {
 
             Scoreboard board = boards.computeIfAbsent(player, p -> {
                 Scoreboard b = Bukkit.getScoreboardManager().getNewScoreboard();
-                Objective obj = b.registerNewObjective(
-                        "tikkertje",
-                        "dummy",
-                        "§6§lSprookjesCraft"
-                );
+                Objective obj = b.registerNewObjective("tikkertje", "dummy", "§6§lTikkertje");
                 obj.setDisplaySlot(DisplaySlot.SIDEBAR);
                 p.setScoreboard(b);
                 return b;
@@ -35,13 +31,17 @@ public class TikkertjeScoreboard {
 
             Objective obj = board.getObjective("tikkertje");
             if (obj == null) continue;
+
             for (String entry : new HashSet<>(board.getEntries())) {
                 board.resetScores(entry);
             }
 
-            int score = 12;
-            obj.getScore("§7Tikkertje").setScore(score--);
-            obj.getScore("§8§m────────────").setScore(score--);
+            int score = 10;
+
+            obj.getScore("§7Ronde: §e" + round).setScore(score--);
+            obj.getScore("§7Tijd: §e" + timeLeft + "s").setScore(score--);
+            obj.getScore(" ").setScore(score--);
+
             PlayerRole role = gameManager.getRole(player);
             String roleText = switch (role) {
                 case TIKKER -> "§cTikker";
@@ -50,21 +50,17 @@ public class TikkertjeScoreboard {
             };
 
             obj.getScore("§7Rol: " + roleText).setScore(score--);
-            obj.getScore("§7Resterende tijd: §e" + timeLeft + "s").setScore(score--);
-            obj.getScore(" ").setScore(score--);
 
             Player tikker = Bukkit.getOnlinePlayers().stream()
                     .filter(gameManager::isTikker)
                     .findFirst().orElse(null);
 
-            if (tikker != null) {
+            if (tikker != null && !gameManager.isTikker(player)) {
                 obj.getScore("§7Tikker: §c" + tikker.getName()).setScore(score--);
             }
 
             obj.getScore("  ").setScore(score--);
-            obj.getScore("§7Overlevenden: §a" + gameManager.getAlivePlayers()).setScore(score--);
-            obj.getScore("§8").setScore(score--);
-            obj.getScore("§8play.sprookjescraft.nl").setScore(score--);
+            obj.getScore("§7Spelers: §a" + gameManager.getAlivePlayers()).setScore(score--);
         }
     }
 
