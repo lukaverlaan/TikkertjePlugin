@@ -3,14 +3,12 @@ package me.vuxaer.tikkertje.manager;
 import me.vuxaer.tikkertje.Tikkertje;
 import me.vuxaer.tikkertje.util.GameState;
 import me.vuxaer.tikkertje.util.PlayerRole;
-import net.md_5.bungee.api.chat.TextComponent;
+import me.vuxaer.tikkertje.util.WorldGuardHook;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
-
-import static net.md_5.bungee.api.ChatMessageType.ACTION_BAR;
 
 public class GameManager {
 
@@ -31,6 +29,8 @@ public class GameManager {
     private final int BETWEEN_TIME = 5;
 
     private final TikkertjeScoreboard scoreboard;
+
+    private String regionName = null;
 
     public GameManager() {
         this.scoreboard = new TikkertjeScoreboard(this);
@@ -202,7 +202,7 @@ public class GameManager {
         }
     }
 
-    private void checkWin() {
+    public void checkWin() {
         List<Player> alive = players.stream()
                 .filter(p -> roles.getOrDefault(p.getUniqueId(), PlayerRole.SPECTATOR) != PlayerRole.SPECTATOR)
                 .toList();
@@ -221,6 +221,18 @@ public class GameManager {
         stopTimer();
 
         Bukkit.getScheduler().runTaskLater(plugin, this::resetGame, 100);
+    }
+
+    public void eliminatePlayer(Player player) {
+        roles.put(player.getUniqueId(), PlayerRole.SPECTATOR);
+        player.setGameMode(GameMode.SPECTATOR);
+        player.setGlowing(false);
+        players.remove(player);
+        if (player.equals(currentTikker)) {
+            currentTikker = null;
+        }
+
+        checkWin();
     }
 
     private void stopTimer() {
@@ -269,5 +281,26 @@ public class GameManager {
 
     public Tikkertje getPlugin() {
         return plugin;
+    }
+
+    public void setRegion(String regionName) {
+        this.regionName = regionName;
+    }
+
+    public String getRegion() {
+        return regionName;
+    }
+
+    public boolean hasRegion() {
+        return regionName != null;
+    }
+
+    public boolean isInRegion(Player player) {
+        if (!hasRegion()) return true;
+        return WorldGuardHook.isInRegion(player, regionName);
+    }
+
+    public boolean hasWorldGuard() {
+        return Bukkit.getPluginManager().getPlugin("WorldGuard") != null;
     }
 }

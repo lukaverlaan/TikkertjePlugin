@@ -93,7 +93,7 @@ public class TagListener implements Listener {
                 String tijd = seconds == 1 ? "seconde" : "seconden";
                 player.spigot().sendMessage(
                         ACTION_BAR,
-                        new TextComponent("§cJe kunt weer tikken over §e" + seconds + " " + tijd + "!")
+                        new TextComponent("§cJe kunt weer tikken over §e" + seconds + " " + tijd + "§c!")
                 );
             }
         }.runTaskTimer(gameManager.getPlugin(), 0, 10); // elke 0.5 sec

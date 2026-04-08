@@ -4,6 +4,7 @@ main: me.vuxaer.tikkertje.Tikkertje
 api-version: '1.20'
 authors: [ Vuxaer ]
 description: Tikkertje (Sprookjesbos) - SprookjesCraft
+softdepend: [WorldGuard]
 commands:
   tikkertje:
     description: Start het tikkertje spel
