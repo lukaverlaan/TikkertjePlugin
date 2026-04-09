@@ -15,12 +15,10 @@ public class WorldGuardHook {
         try {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionQuery query = container.createQuery();
-
             return query.getApplicableRegions(BukkitAdapter.adapt(player.getLocation()))
                     .getRegions()
                     .stream()
                     .anyMatch(r -> r.getId().equalsIgnoreCase(region));
-
         } catch (NoClassDefFoundError e) {
             return true;
         }
@@ -30,12 +28,9 @@ public class WorldGuardHook {
         try {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionManager manager = container.get(BukkitAdapter.adapt(world));
-
             if (manager == null) return false;
-
             ProtectedRegion region = manager.getRegion(regionName);
             return region != null;
-
         } catch (NoClassDefFoundError e) {
             return false;
         }

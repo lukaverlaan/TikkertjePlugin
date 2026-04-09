@@ -18,43 +18,27 @@ public class Tikkertje extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+
         this.gameManager = new GameManager();
+
         String region = getConfig().getString("region");
         if (region != null && !region.equalsIgnoreCase("null")) {
             gameManager.setRegion(region);
         }
 
-        if (getConfig().contains("spawn.lobby")) {
-            Location lobby = (Location) getConfig().get("spawn.lobby");
-            gameManager.setLobbySpawn(lobby);
-        }
-
-        if (getConfig().contains("spawn.game")) {
-            Location game = (Location) getConfig().get("spawn.game");
-            gameManager.setGameSpawn(game);
-        }
-
         getCommand("tikkertje").setExecutor(new TikkertjeCommand(gameManager));
 
-        Bukkit.getPluginManager().registerEvents(new TagListener(gameManager), this);
-        Bukkit.getPluginManager().registerEvents(new RegionListener(gameManager), this);
-        Bukkit.getPluginManager().registerEvents(new QuitListener(gameManager), this);
-
+        registerListeners();
         getLogger().info("Tikkertje plugin enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        if (gameManager != null && gameManager.getState() != null) {
-            gameManager.stopGame();
-        }
     }
 
     public static Tikkertje getInstance() {
         return instance;
     }
 
-    public GameManager getGameManager() {
-        return gameManager;
+    private void registerListeners() {
+        Bukkit.getPluginManager().registerEvents(new TagListener(gameManager), this);
+        Bukkit.getPluginManager().registerEvents(new RegionListener(gameManager), this);
+        Bukkit.getPluginManager().registerEvents(new QuitListener(gameManager), this);
     }
 }

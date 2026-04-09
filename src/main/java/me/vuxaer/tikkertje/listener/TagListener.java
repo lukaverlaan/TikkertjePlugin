@@ -33,30 +33,23 @@ public class TagListener implements Listener {
 
         if (!(e.getDamager() instanceof Player damager)) return;
         if (!(e.getEntity() instanceof Player target)) return;
-
         if (gameManager.getState() != GameState.RUNNING) return;
-
         e.setCancelled(true);
-
         if (damager.getGameMode() == GameMode.SPECTATOR) return;
         if (target.getGameMode() == GameMode.SPECTATOR) return;
-
         if (!gameManager.isTikker(damager)) return;
         if (damager.equals(target)) return;
         if (gameManager.getRole(target) != PlayerRole.OVERLEVER) return;
 
         long now = System.currentTimeMillis();
-
         if (cooldown.containsKey(damager)) {
             if (now - cooldown.get(damager) < 500) return;
         }
-
         if (noTagCooldown.containsKey(damager.getUniqueId())) {
             if (now < noTagCooldown.get(damager.getUniqueId())) {
                 return;
             }
         }
-
         cooldown.put(damager, now);
 
         target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);

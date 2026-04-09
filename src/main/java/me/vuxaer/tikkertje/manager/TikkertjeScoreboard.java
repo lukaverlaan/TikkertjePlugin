@@ -20,7 +20,6 @@ public class TikkertjeScoreboard {
 
     public void updateAll(int timeLeft, int round) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-
             Scoreboard board = boards.computeIfAbsent(player, p -> {
                 Scoreboard b = Bukkit.getScoreboardManager().getNewScoreboard();
                 Objective obj = b.registerNewObjective("tikkertje", "dummy", "§6§lTikkertje");
@@ -31,13 +30,11 @@ public class TikkertjeScoreboard {
 
             Objective obj = board.getObjective("tikkertje");
             if (obj == null) continue;
-
             for (String entry : new HashSet<>(board.getEntries())) {
                 board.resetScores(entry);
             }
 
             int score = 10;
-
             obj.getScore("§7Ronde: §e" + round).setScore(score--);
             obj.getScore("§7Tijd: §e" + timeLeft + "s").setScore(score--);
             obj.getScore(" ").setScore(score--);
@@ -48,9 +45,7 @@ public class TikkertjeScoreboard {
                 case OVERLEVER -> "§aOverlever";
                 case SPECTATOR -> "§7Spectator";
             };
-
             obj.getScore("§7Rol: " + roleText).setScore(score--);
-
             Player tikker = Bukkit.getOnlinePlayers().stream()
                     .filter(gameManager::isTikker)
                     .findFirst().orElse(null);
@@ -58,7 +53,6 @@ public class TikkertjeScoreboard {
             if (tikker != null && !gameManager.isTikker(player)) {
                 obj.getScore("§7Tikker: §c" + tikker.getName()).setScore(score--);
             }
-
             obj.getScore("  ").setScore(score--);
             obj.getScore("§7Spelers: §a" + gameManager.getAlivePlayers()).setScore(score--);
         }

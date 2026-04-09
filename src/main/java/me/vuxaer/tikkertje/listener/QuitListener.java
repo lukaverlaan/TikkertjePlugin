@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class QuitListener implements Listener {
-
     private final GameManager gameManager;
 
     public QuitListener(GameManager gameManager) {
@@ -18,7 +17,6 @@ public class QuitListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         if (gameManager.getState() != GameState.RUNNING) return;
-
         Player player = e.getPlayer();
         gameManager.eliminatePlayer(player);
     }
