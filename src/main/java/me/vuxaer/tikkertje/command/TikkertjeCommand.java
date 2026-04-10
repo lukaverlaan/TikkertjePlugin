@@ -39,7 +39,7 @@ public class TikkertjeCommand implements CommandExecutor {
                     player.sendMessage("§cMinimaal 2 spelers nodig!");
                     return true;
                 }
-                gameManager.startGame(players);
+                gameManager.startGame(players, player);
             }
             case "stop" -> {
                 if (gameManager.getState() != GameState.RUNNING) {
@@ -47,6 +47,23 @@ public class TikkertjeCommand implements CommandExecutor {
                     return true;
                 }
                 gameManager.stopGame(player.getName());
+            }
+            case "reload" -> {
+                if (!sender.hasPermission("tikkertje.admin")) {
+                    sender.sendMessage("§cGeen permissie!");
+                    return true;
+                }
+
+                plugin.reloadConfig();
+
+                String region = plugin.getConfig().getString("region");
+                if (region != null && !region.isEmpty()) {
+                    gameManager.setRegion(region);
+                } else {
+                    gameManager.setRegion(null);
+                }
+
+                sender.sendMessage("§aConfig succesvol herladen!");
             }
             case "setregion" -> {
                 if (gameManager.getState() == GameState.RUNNING) {
@@ -123,6 +140,7 @@ public class TikkertjeCommand implements CommandExecutor {
         sender.sendMessage("§e/tikkertje start §7- Start een spel");
         sender.sendMessage("§e/tikkertje stop §7- Stop het spel");
         sender.sendMessage("§e/tikkertje help §7- Toon dit menu");
+        sender.sendMessage("§e/tikkertje reload §7- Herlaad de config");
         sender.sendMessage("§e/tikkertje setregion <naam> §7- Stel een region in");
         sender.sendMessage("§e/tikkertje clearregion §7- Verwijder de huidige region");
         sender.sendMessage("§e/tikkertje setspawn <lobby|game> §7- Stel een lobby/game spawn in");

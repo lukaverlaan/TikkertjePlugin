@@ -19,7 +19,7 @@ public class TikkertjeScoreboard {
     }
 
     public void updateAll(int timeLeft, int round) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : gameManager.getPlayers()) {
             Scoreboard board = boards.computeIfAbsent(player, p -> {
                 Scoreboard b = Bukkit.getScoreboardManager().getNewScoreboard();
                 Objective obj = b.registerNewObjective("tikkertje", "dummy", "§6§lTikkertje");
@@ -63,5 +63,10 @@ public class TikkertjeScoreboard {
             player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         }
         boards.clear();
+    }
+
+    public void clear(Player player) {
+        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+        boards.remove(player);
     }
 }

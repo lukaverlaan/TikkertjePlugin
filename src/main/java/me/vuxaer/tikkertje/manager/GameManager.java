@@ -1,6 +1,8 @@
 package me.vuxaer.tikkertje.manager;
 
+import com.google.gson.Gson;
 import me.vuxaer.tikkertje.Tikkertje;
+import me.vuxaer.tikkertje.util.GameResult;
 import me.vuxaer.tikkertje.util.GameState;
 import me.vuxaer.tikkertje.util.PlayerRole;
 import me.vuxaer.tikkertje.util.WorldGuardHook;
@@ -27,6 +29,7 @@ public class GameManager {
 
     private final int ROUND_TIME = 60;
     private final int BETWEEN_TIME = 5;
+    private long gameStartTime;
     private int round = 0;
 
     private final TikkertjeScoreboard scoreboard;
@@ -41,12 +44,12 @@ public class GameManager {
         return state;
     }
 
-    public boolean startGame(List<Player> playerList) {
+    public boolean startGame(List<Player> playerList, Player sender) {
         if (state != GameState.WAITING) return false;
         if (playerList.size() < 2) return false;
 
         if (!hasAllSpawns()) {
-            Bukkit.broadcastMessage("§cOntbrekende spawns: §e" + getMissingSpawns());
+            sender.sendMessage("§cOntbrekende spawns: §e" + getMissingSpawns());
             return false;
         }
 
@@ -62,8 +65,10 @@ public class GameManager {
             p.setGlowing(false);
             roles.put(p.getUniqueId(), PlayerRole.OVERLEVER);
         }
+
         state = GameState.RUNNING;
         startNewRound();
+        gameStartTime = System.currentTimeMillis();
         return true;
     }
 
@@ -75,7 +80,7 @@ public class GameManager {
 
         round++;
 
-        Bukkit.broadcastMessage("§6Nieuwe ronde gestart!");
+        broadcastToGame("§6Nieuwe ronde gestart!");
         Player newTikker = getRandomAlivePlayer();
         setTikker(newTikker);
         startRoundTimer();
@@ -95,7 +100,7 @@ public class GameManager {
         player.setGlowing(true);
         player.sendTitle("§c§lJIJ BENT DE TIKKER!", "§7Zorg dat je snel iemand anders tikt!", 5, 50, 10);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
-        Bukkit.broadcastMessage("§6⚡ §e" + player.getName() + " is nu de Tikker!");
+        broadcastToGame("§6⚡ §e" + player.getName() + " is nu de Tikker!");
     }
 
     private void startRoundTimer() {
@@ -111,14 +116,14 @@ public class GameManager {
 
                 scoreboard.updateAll(timeLeft, round);
                 if (timeLeft == 60 || timeLeft == 45 || timeLeft == 30 || timeLeft == 15 || timeLeft == 10) {
-                    Bukkit.broadcastMessage("§eNog §6" + timeLeft + " §eseconden!");
+                    broadcastToGame("§eNog §6" + timeLeft + " §eseconden!");
                 }
 
                 if (timeLeft <= 5 && timeLeft > 0) {
 
-                    Bukkit.broadcastMessage("§c" + timeLeft + "...");
+                    broadcastToGame("§c" + timeLeft + "...");
 
-                    for (Player p : Bukkit.getOnlinePlayers()) {
+                    for (Player p : players) {
                         p.sendTitle("§c§l" + timeLeft, "§7Tikker wordt bijna geëlimineerd!", 0, 20, 0);
                         float pitch = 1f + (5 - timeLeft) * 0.2f;
                         p.playSound(
@@ -142,7 +147,7 @@ public class GameManager {
 
     private void eliminateTikker() {
         Player eliminated = currentTikker;
-        Bukkit.broadcastMessage("§7" + eliminated.getName() + " is geëlimineerd!");
+        broadcastToGame("§7" + eliminated.getName() + " is geëlimineerd!");
 
         roles.put(eliminated.getUniqueId(), PlayerRole.SPECTATOR);
         eliminated.setGameMode(GameMode.SPECTATOR);
@@ -173,7 +178,7 @@ public class GameManager {
                     return;
                 }
                 if (time <= 3) {
-                    Bukkit.broadcastMessage("§eNieuwe ronde in " + time + "...");
+                    broadcastToGame("§eNieuwe ronde in " + time + "...");
                 }
                 time--;
             }
@@ -198,7 +203,7 @@ public class GameManager {
 
         if (alive.size() == 1) {
             Player winner = alive.get(0);
-            Bukkit.broadcastMessage("§a" + winner.getName() + " heeft gewonnen!");
+            broadcastToGame("§a" + winner.getName() + " heeft gewonnen!");
             endGame();
         }
     }
@@ -206,14 +211,36 @@ public class GameManager {
     private void endGame() {
         state = GameState.ENDING;
         stopTimer();
+
+        Player winner = players.stream()
+                .filter(p -> roles.getOrDefault(p.getUniqueId(), PlayerRole.SPECTATOR) != PlayerRole.SPECTATOR)
+                .findFirst()
+                .orElse(null);
+
+        long duration = (System.currentTimeMillis() - gameStartTime) / 1000;
+
+        sendResult(new GameResult(players, winner, round, duration));
+
         Bukkit.getScheduler().runTaskLater(plugin, this::resetGame, 100);
+    }
+
+    private void sendResult(GameResult result) {
+        String endpoint = plugin.getConfig().getString("endpoint");
+
+        if (endpoint == null || endpoint.isEmpty()) {
+            plugin.getLogger().warning("No endpoint configured!");
+            return;
+        }
+        plugin.getLogger().info("Endpoint: " + endpoint);
+        plugin.getLogger().info("Result: " + new Gson().toJson(result));
+
+        plugin.getHttpService().sendGameResult(endpoint, result);
     }
 
     public void eliminatePlayer(Player player) {
         roles.put(player.getUniqueId(), PlayerRole.SPECTATOR);
         player.setGameMode(GameMode.SPECTATOR);
         player.setGlowing(false);
-        players.remove(player);
         if (player.equals(currentTikker)) {
             currentTikker = null;
         }
@@ -226,6 +253,7 @@ public class GameManager {
         roles.remove(player.getUniqueId());
         player.setGameMode(GameMode.ADVENTURE); // of SURVIVAL als je wil
         player.setGlowing(false);
+        scoreboard.clear(player);
         player.setPlayerListName(player.getName());
         player.setDisplayName(player.getName());
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
@@ -276,21 +304,11 @@ public class GameManager {
         state = GameState.ENDING;
         stopTimer();
 
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage("§cSpel gestopt §7(door: §e" + reason + "§7)");
-        Bukkit.broadcastMessage(" ");
+        broadcastToGame(" ");
+        broadcastToGame("§cSpel gestopt §7(door: §e" + reason + "§7)");
+        broadcastToGame(" ");
 
         Bukkit.getScheduler().runTaskLater(plugin, this::resetGame, 40);
-    }
-
-    private void resetPlayer(Player p, Location lobby) {
-        if (lobby != null) p.teleport(lobby);
-
-        p.setGameMode(GameMode.ADVENTURE);
-        p.setHealth(20);
-        p.setFoodLevel(20);
-        p.getInventory().clear();
-        p.setGlowing(false);
     }
 
     private Player getRandomAlivePlayer() {
@@ -351,5 +369,27 @@ public class GameManager {
 
     private boolean hasAllSpawns() {
         return getMissingSpawns().isEmpty();
+    }
+
+    public void broadcastToGame(String message) {
+        for (Player p : players) {
+            p.sendMessage(message);
+        }
+    }
+
+    public void sendTitleToGame(String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+        for (Player p : players) {
+            p.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+        }
+    }
+
+    public void playSoundToGame(Sound sound, float volume, float pitch) {
+        for (Player p : players) {
+            p.playSound(p.getLocation(), sound, volume, pitch);
+        }
+    }
+
+    public List<Player> getPlayers() {
+        return players;
     }
 }
