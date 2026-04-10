@@ -41,6 +41,13 @@ public class TikkertjeCommand implements CommandExecutor {
                 }
                 gameManager.startGame(players);
             }
+            case "stop" -> {
+                if (gameManager.getState() != GameState.RUNNING) {
+                    player.sendMessage("§cEr is geen spel bezig!");
+                    return true;
+                }
+                gameManager.stopGame(player.getName());
+            }
             case "setregion" -> {
                 if (gameManager.getState() == GameState.RUNNING) {
                     player.sendMessage("§cJe kunt de region niet aanpassen tijdens een spel!");
@@ -82,6 +89,28 @@ public class TikkertjeCommand implements CommandExecutor {
                 plugin.saveConfig();
                 player.sendMessage("§cRegion verwijderd!");
             }
+            case "setspawn" -> {
+                if (gameManager.getState() == GameState.RUNNING) {
+                    player.sendMessage("§cJe kunt de spawns niet aanpassen tijdens een spel!");
+                    return true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage("§cGebruik: /tikkertje setspawn <lobby|game>");
+                    return true;
+                }
+
+                String type = args[1].toLowerCase();
+
+                if (!type.equals("lobby") && !type.equals("game")) {
+                    player.sendMessage("§cGebruik: lobby of game");
+                    return true;
+                }
+
+                plugin.getSpawnManager().setSpawn(type, player.getLocation());
+                plugin.saveConfig();
+
+                player.sendMessage("§aSpawn gezet voor: §e" + type);
+            }
             default -> sendHelp(player);
         }
         return true;
@@ -92,9 +121,11 @@ public class TikkertjeCommand implements CommandExecutor {
         sender.sendMessage("§6§lTikkertje Commands");
         sender.sendMessage(" ");
         sender.sendMessage("§e/tikkertje start §7- Start een spel");
+        sender.sendMessage("§e/tikkertje stop §7- Stop het spel");
         sender.sendMessage("§e/tikkertje help §7- Toon dit menu");
         sender.sendMessage("§e/tikkertje setregion <naam> §7- Stel een region in");
         sender.sendMessage("§e/tikkertje clearregion §7- Verwijder de huidige region");
+        sender.sendMessage("§e/tikkertje setspawn <lobby|game> §7- Stel een lobby/game spawn in");
         if (gameManager.hasRegion()) {
             sender.sendMessage(" ");
             sender.sendMessage("§7Huidige region: §e" + gameManager.getRegion());

@@ -44,11 +44,20 @@ public class GameManager {
     public boolean startGame(List<Player> playerList) {
         if (state != GameState.WAITING) return false;
         if (playerList.size() < 2) return false;
+
+        if (!hasAllSpawns()) {
+            Bukkit.broadcastMessage("§cOntbrekende spawns: §e" + getMissingSpawns());
+            return false;
+        }
+
         players.clear();
         players.addAll(playerList);
         roles.clear();
 
+        var spawn = plugin.getSpawnManager().getSpawn("game");
         for (Player p : players) {
+            if (spawn != null) p.teleport(spawn);
+
             p.setGameMode(GameMode.ADVENTURE);
             p.setGlowing(false);
             roles.put(p.getUniqueId(), PlayerRole.OVERLEVER);
@@ -243,8 +252,15 @@ public class GameManager {
     public void resetGame() {
         stopTimer();
 
+        var lobby = plugin.getSpawnManager().getSpawn("lobby");
+
         for (Player p : players) {
+            if (lobby != null) p.teleport(lobby);
+
             p.setGameMode(GameMode.ADVENTURE);
+            p.setHealth(20);
+            p.setFoodLevel(20);
+            p.getInventory().clear();
             p.setGlowing(false);
         }
         roles.clear();
@@ -252,6 +268,29 @@ public class GameManager {
         scoreboard.clearAll();
         state = GameState.WAITING;
         round = 0;
+    }
+
+    public void stopGame(String reason) {
+        if (state != GameState.RUNNING) return;
+
+        state = GameState.ENDING;
+        stopTimer();
+
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§cSpel gestopt §7(door: §e" + reason + "§7)");
+        Bukkit.broadcastMessage(" ");
+
+        Bukkit.getScheduler().runTaskLater(plugin, this::resetGame, 40);
+    }
+
+    private void resetPlayer(Player p, Location lobby) {
+        if (lobby != null) p.teleport(lobby);
+
+        p.setGameMode(GameMode.ADVENTURE);
+        p.setHealth(20);
+        p.setFoodLevel(20);
+        p.getInventory().clear();
+        p.setGlowing(false);
     }
 
     private Player getRandomAlivePlayer() {
@@ -298,5 +337,19 @@ public class GameManager {
 
     public boolean hasWorldGuard() {
         return Bukkit.getPluginManager().getPlugin("WorldGuard") != null;
+    }
+
+    private String getMissingSpawns() {
+        var sm = plugin.getSpawnManager();
+        List<String> missing = new ArrayList<>();
+
+        if (sm.getSpawn("lobby") == null) missing.add("lobby");
+        if (sm.getSpawn("game") == null) missing.add("game");
+
+        return String.join(", ", missing);
+    }
+
+    private boolean hasAllSpawns() {
+        return getMissingSpawns().isEmpty();
     }
 }
