@@ -98,9 +98,9 @@ public class GameManager {
         roles.put(player.getUniqueId(), PlayerRole.TIKKER);
 
         player.setGlowing(true);
-        player.sendTitle("§c§lJIJ BENT DE TIKKER!", "§7Zorg dat je snel iemand anders tikt!", 5, 50, 10);
+        player.sendTitle("§c§lJIJ BEZIT NU DE VLOEK!", "§7Zorg dat je hem snel weer doorgeeft!", 5, 50, 10);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
-        broadcastToGame("§6⚡ §e" + player.getName() + " is nu de Tikker!");
+        broadcastToGame("§6⚡ §e" + player.getName() + " bezit nu de Vloek!");
     }
 
     private void startRoundTimer() {
@@ -124,7 +124,7 @@ public class GameManager {
                     broadcastToGame("§c" + timeLeft + "...");
 
                     for (Player p : players) {
-                        p.sendTitle("§c§l" + timeLeft, "§7Tikker wordt bijna geëlimineerd!", 0, 20, 0);
+                        p.sendTitle("§c§l" + timeLeft, "§7Vloekdrager wordt bijna geëlimineerd!", 0, 20, 0);
                         float pitch = 1f + (5 - timeLeft) * 0.2f;
                         p.playSound(
                                 p.getLocation(),
@@ -147,7 +147,27 @@ public class GameManager {
 
     private void eliminateTikker() {
         Player eliminated = currentTikker;
-        broadcastToGame("§7" + eliminated.getName() + " is geëlimineerd!");
+
+        Location loc = eliminated.getLocation();
+
+        loc.getWorld().createExplosion(loc, 0F, false, false);
+
+        loc.getWorld().spawnParticle(Particle.SOUL, loc, 80, 0.5, 1, 0.5, 0.05);
+        loc.getWorld().spawnParticle(Particle.SMOKE_LARGE, loc, 40, 0.3, 0.5, 0.3, 0.02);
+
+        loc.getWorld().playSound(loc, Sound.ENTITY_WITHER_DEATH, 1f, 0.8f);
+        loc.getWorld().playSound(loc, Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, 1f, 1.2f);
+
+        broadcastToGame(" ");
+        broadcastToGame("§2🌲 De Bosgeest eist een ziel...");
+        broadcastToGame("§8" + eliminated.getName() + " werd opgeslokt door de duisternis.");
+        broadcastToGame(" ");
+
+        sendTitleToGame(
+                "§2§lEEN ZIEL VERLOREN...",
+                "§7" + eliminated.getName() + " kon niet ontsnappen",
+                5, 40, 10
+        );
 
         roles.put(eliminated.getUniqueId(), PlayerRole.SPECTATOR);
         eliminated.setGameMode(GameMode.SPECTATOR);
@@ -188,11 +208,11 @@ public class GameManager {
     public void switchTikker(Player newTikker) {
         Player old = currentTikker;
         setTikker(newTikker);
-        newTikker.sendTitle("§cJIJ BENT DE TIKKER!", "§7Zorg dat je snel iemand anders tikt!", 5, 40, 10);
+        newTikker.sendTitle("§cJIJ BEZIT NU DE VLOEK!", "§7Zorg dat je hem snel weer doorgeeft!", 5, 40, 10);
         newTikker.playSound(newTikker.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
 
         if (old != null) {
-            old.sendTitle("§aJe bent vrij!", "§7Ren snel verder!", 5, 40, 10);
+            old.sendTitle("§aJe bent vrij!", "§7Ren snel weg!", 5, 40, 10);
         }
     }
 
@@ -202,8 +222,15 @@ public class GameManager {
                 .toList();
 
         if (alive.size() == 1) {
-            Player winner = alive.get(0);
-            broadcastToGame("§a" + winner.getName() + " heeft gewonnen!");
+            Player last = alive.get(0);
+            if (isTikker(last)) {
+                broadcastToGame(" ");
+                broadcastToGame("§8De Bosgeest heeft iedereen opgeslokt!");
+                broadcastToGame("§cNiemand wist te ontsnappen aan de vloek...");
+                broadcastToGame(" ");
+            } else {
+                broadcastToGame("§a" + last.getName() + " ontsnapte aan de schaduw en wint!");
+            }
             endGame();
         }
     }

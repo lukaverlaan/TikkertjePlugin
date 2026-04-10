@@ -36,7 +36,6 @@ public class Tikkertje extends JavaPlugin {
         getCommand("tikkertje").setExecutor(new TikkertjeCommand(gameManager));
 
         registerListeners();
-        getLogger().info("Tikkertje plugin enabled!");
     }
 
     public static Tikkertje getInstance() {

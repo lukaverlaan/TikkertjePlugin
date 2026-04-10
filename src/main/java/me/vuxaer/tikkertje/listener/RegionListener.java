@@ -72,8 +72,8 @@ public class RegionListener implements Listener {
 
             int seconds = (int) Math.ceil(timeLeft / 1000.0);
             player.sendTitle(
-                    "§c§lGA TERUG!",
-                    "§eBinnen " + seconds + " seconden",
+                    "§c§lKEER TERUG!",
+                    "§eJe hebt nog " + seconds + (seconds == 1 ? " seconde" : " seconden"),
                     0, 10, 5
             );
             if (seconds > 3) {

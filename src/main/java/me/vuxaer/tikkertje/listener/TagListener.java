@@ -54,10 +54,18 @@ public class TagListener implements Listener {
 
         target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);
         damager.playSound(damager.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
-        target.sendTitle("§cJe bent getikt!", "§7Ren!", 5, 30, 10);
+        target.sendTitle("§cJe bezit de vloek!", "§7Ren!", 5, 30, 10);
 
-        long duration = 3000;
+        long duration = 5000;
         noTagCooldown.put(target.getUniqueId(), now + duration);
+        target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.SLOW,
+                (int) (duration / 50),
+                1,
+                false,
+                false,
+                false
+        ));
         startCooldownBar(target, duration);
         gameManager.switchTikker(target);
     }
@@ -74,6 +82,7 @@ public class TagListener implements Listener {
 
                 long remaining = endTime - System.currentTimeMillis();
                 if (remaining <= 0) {
+                    player.removePotionEffect(org.bukkit.potion.PotionEffectType.SLOW);
                     player.spigot().sendMessage(
                             ACTION_BAR,
                             new TextComponent("")
@@ -88,7 +97,8 @@ public class TagListener implements Listener {
                         ACTION_BAR,
                         new TextComponent("§cJe kunt weer tikken over §e" + seconds + " " + tijd + "§c!")
                 );
+                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.8f);
             }
-        }.runTaskTimer(gameManager.getPlugin(), 0, 10); // elke 0.5 sec
+        }.runTaskTimer(gameManager.getPlugin(), 0, 10);
     }
 }
