@@ -25,6 +25,7 @@ public class Tikkertje extends JavaPlugin {
 
         this.spawnManager = new SpawnManager(this);
         this.gameManager = new GameManager();
+
         this.httpService = new HttpService(this);
 
         String region = getConfig().getString("region");

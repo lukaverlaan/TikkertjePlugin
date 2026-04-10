@@ -226,13 +226,10 @@ public class GameManager {
 
     private void sendResult(GameResult result) {
         String endpoint = plugin.getConfig().getString("endpoint");
-
         if (endpoint == null || endpoint.isEmpty()) {
             plugin.getLogger().warning("No endpoint configured!");
             return;
         }
-        plugin.getLogger().info("Endpoint: " + endpoint);
-        plugin.getLogger().info("Result: " + new Gson().toJson(result));
 
         plugin.getHttpService().sendGameResult(endpoint, result);
     }
