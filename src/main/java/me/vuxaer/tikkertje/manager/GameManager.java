@@ -8,6 +8,8 @@ import me.vuxaer.tikkertje.util.PlayerRole;
 import me.vuxaer.tikkertje.util.WorldGuardHook;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -26,6 +28,9 @@ public class GameManager {
 
     private BukkitRunnable timerTask;
     private int timeLeft;
+
+    private boolean freezePhase = false;
+    private final int FREEZE_TIME = 10;
 
     private final int ROUND_TIME = 60;
     private final int BETWEEN_TIME = 5;
@@ -80,10 +85,56 @@ public class GameManager {
 
         round++;
 
-        broadcastToGame("§6Nieuwe ronde gestart!");
+        broadcastToGame("§6✨ §lNieuwe ronde gestart!");
         Player newTikker = getRandomAlivePlayer();
         setTikker(newTikker);
-        startRoundTimer();
+        startFreezePhase();
+    }
+
+    private void startFreezePhase() {
+        freezePhase = true;
+        broadcastToGame("§eOverlevers krijgen §610 seconden §evoorsprong!");
+        if (currentTikker != null) {
+            currentTikker.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, FREEZE_TIME * 20, 1, false, false, false));
+            currentTikker.sendTitle(
+                    "§c§lWACHT!",
+                    "§7Je mag nog niet bewegen!",
+                    0, 40, 10
+            );
+        }
+
+        new BukkitRunnable() {
+            int time = FREEZE_TIME;
+
+            @Override
+            public void run() {
+                if (time <= 0) {
+                    freezePhase = false;
+                    broadcastToGame("§a🏁 §lDe jacht begint!");
+                    if (currentTikker != null) {
+                        currentTikker.removePotionEffect(PotionEffectType.BLINDNESS);
+                        currentTikker.sendTitle(
+                                "§aGA!",
+                                "§7Je mag nu bewegen!",
+                                5, 30, 10
+                        );
+                    }
+                    startRoundTimer();
+                    cancel();
+                    return;
+                }
+
+                if (currentTikker != null) {
+                    currentTikker.sendTitle(
+                            "§c§lWACHT!",
+                            "§7Nog " + time + " seconden",
+                            0, 20, 0
+                    );
+                }
+
+                time--;
+            }
+        }.runTaskTimer(plugin, 0, 20);
     }
 
     private void setTikker(Player player) {
@@ -100,7 +151,7 @@ public class GameManager {
         player.setGlowing(true);
         player.sendTitle("§c§lJIJ BEZIT NU DE VLOEK!", "§7Zorg dat je hem snel weer doorgeeft!", 5, 50, 10);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
-        broadcastToGame("§6⚡ §e" + player.getName() + " bezit nu de Vloek!");
+        broadcastToGame("§6⚡ §e" + player.getName() + " §6heeft de §cVloek§6 overgenomen!");
     }
 
     private void startRoundTimer() {
@@ -124,7 +175,7 @@ public class GameManager {
                     broadcastToGame("§c" + timeLeft + "...");
 
                     for (Player p : players) {
-                        p.sendTitle("§c§l" + timeLeft, "§7Vloekdrager wordt bijna geëlimineerd!", 0, 20, 0);
+                        p.sendTitle("§c§l" + timeLeft, "§7De bosgeest gaat bijna ten aanval!", 0, 20, 0);
                         float pitch = 1f + (5 - timeLeft) * 0.2f;
                         p.playSound(
                                 p.getLocation(),
@@ -159,8 +210,8 @@ public class GameManager {
         loc.getWorld().playSound(loc, Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, 1f, 1.2f);
 
         broadcastToGame(" ");
-        broadcastToGame("§2🌲 De Bosgeest eist een ziel...");
-        broadcastToGame("§8" + eliminated.getName() + " werd opgeslokt door de duisternis.");
+        broadcastToGame("§2🌲 §lDe Bosgeest eist een ziel...");
+        broadcastToGame("§8☠ §7" + eliminated.getName() + " §8werd opgeslokt door de duisternis.");
         broadcastToGame(" ");
 
         sendTitleToGame(
@@ -229,7 +280,7 @@ public class GameManager {
                 broadcastToGame("§cNiemand wist te ontsnappen aan de vloek...");
                 broadcastToGame(" ");
             } else {
-                broadcastToGame("§a" + last.getName() + " ontsnapte aan de schaduw en wint!");
+                broadcastToGame("§6🏆 §e" + last.getName() + " §6ontsnapte aan de §2schaduw §6en wint!");
             }
             endGame();
         }
@@ -329,7 +380,7 @@ public class GameManager {
         stopTimer();
 
         broadcastToGame(" ");
-        broadcastToGame("§cSpel gestopt §7(door: §e" + reason + "§7)");
+        broadcastToGame("§c⛔ Spel gestopt §7(door: §e" + reason + "§7)");
         broadcastToGame(" ");
 
         Bukkit.getScheduler().runTaskLater(plugin, this::resetGame, 40);
@@ -407,13 +458,11 @@ public class GameManager {
         }
     }
 
-    public void playSoundToGame(Sound sound, float volume, float pitch) {
-        for (Player p : players) {
-            p.playSound(p.getLocation(), sound, volume, pitch);
-        }
-    }
-
     public List<Player> getPlayers() {
         return players;
+    }
+
+    public boolean isFreezePhase() {
+        return freezePhase;
     }
 }

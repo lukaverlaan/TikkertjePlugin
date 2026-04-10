@@ -36,6 +36,10 @@ public class RegionListener implements Listener {
     public void onMove(PlayerMoveEvent e) {
         Player player = e.getPlayer();
         if (gameManager.getState() != GameState.RUNNING) return;
+        if (gameManager.isFreezePhase() && gameManager.isTikker(player)) {
+            e.setTo(e.getFrom());
+            return;
+        }
         if (!gameManager.hasRegion()) return;
         if (player.getGameMode() == GameMode.SPECTATOR) return;
         if (e.getFrom().distanceSquared(e.getTo()) < 0.01) return;

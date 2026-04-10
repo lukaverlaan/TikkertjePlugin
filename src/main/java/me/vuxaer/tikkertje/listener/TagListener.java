@@ -54,7 +54,7 @@ public class TagListener implements Listener {
 
         target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);
         damager.playSound(damager.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
-        target.sendTitle("§cJe bezit de vloek!", "§7Ren!", 5, 30, 10);
+        target.sendTitle("§c§lJe bezit de vloek!", "§7Ren zolang je nog kunt...", 5, 30, 10);
 
         long duration = 5000;
         noTagCooldown.put(target.getUniqueId(), now + duration);
