@@ -9,6 +9,9 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WorldGuardHook {
 
     public static boolean isInRegion(Player player, String region) {
@@ -29,10 +32,31 @@ public class WorldGuardHook {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionManager manager = container.get(BukkitAdapter.adapt(world));
             if (manager == null) return false;
+
             ProtectedRegion region = manager.getRegion(regionName);
             return region != null;
+
         } catch (NoClassDefFoundError e) {
             return false;
         }
+    }
+
+    public static List<String> getRegions(World world) {
+        List<String> regions = new ArrayList<>();
+
+        try {
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionManager manager = container.get(BukkitAdapter.adapt(world));
+
+            if (manager == null) return regions;
+
+            for (ProtectedRegion region : manager.getRegions().values()) {
+                regions.add(region.getId());
+            }
+
+        } catch (NoClassDefFoundError e) {
+        }
+
+        return regions;
     }
 }
